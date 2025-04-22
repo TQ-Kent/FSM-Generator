@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FSM Generator</title>
+    <link rel="stylesheet" href="code.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/cytoscape/3.23.0/cytoscape.min.js"></script>
+</head>
+<body>
+    <div class="container">
+        <!-- Left Side: FSM Diagram -->
+        <div class="left-panel">
+            <h1>FSM Diagram</h1>
+            <div id="fsmDiagram"></div>
+            <pre id="errorMessages"></pre>
+            <pre id="fsmDefinitionOutput"></pre>
+        </div>
+
+        <!-- Right Side: Adjustments -->
+        <div class="right-panel">
+            <h1>FSM Adjustments</h1>
+            <div class="fsm-definition">
+                <h2>1. Define FSM Components</h2>
+                <div class="form-group">
+                    <label for="states">States (comma-separated):</label>
+                    <input type="text" id="states" name="states" placeholder="q0, q1, q2">
+                </div>
+                <div class="form-group">
+                    <label for="alphabet">Alphabet (comma-separated):</label>
+                    <input type="text" id="alphabet" name="alphabet" placeholder="a, b, 0, 1">
+                </div>
+                <div class="form-group">
+                    <label for="startState">Start State:</label>
+                    <select id="startState" name="startState"></select>
+                </div>
+                <div class="form-group">
+                    <label for="finalStates">Final States:</label>
+                    <select id="finalStates" name="finalStates" multiple></select>
+                    <small>(Hold Ctrl/Cmd to select multiple)</small>
+                </div>
+            </div>
+
+            <div class="fsm-transitions">
+                <h2>2. Define Transitions</h2>
+                <table id="transitionTable">
+                    <thead>
+                        <tr>
+                            <th>From</th>
+                            <th>Input</th>
+                            <th>To</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+                <button id="addRowBtn">Add Transition Row</button>
+            </div>
+
+            <div class="fsm-actions">
+                <button id="generateBtn">Generate FSM</button>
+                <button id="loadExampleBtn">Load Example</button>
+            </div>
+        </div>
+    </div>
+    <script src="code.js"></script>
+</body>
+</html>
