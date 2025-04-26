@@ -31,13 +31,12 @@
                     <input type="text" id="alphabet" name="alphabet" placeholder="a, b, 0, 1">
                 </div>
                 <div class="form-group">
-                    <label for="startState">Start State:</label>
-                    <select id="startState" name="startState"></select>
+                    <label>Start State:</label>
+                    <div id="startStateCheckboxes"></div>
                 </div>
                 <div class="form-group">
-                    <label for="finalStates">Final States:</label>
-                    <select id="finalStates" name="finalStates" multiple></select>
-                    <small>(Hold Ctrl/Cmd to select multiple)</small>
+                    <label>Final States:</label>
+                    <div id="finalStateCheckboxes"></div>
                 </div>
             </div>
 
@@ -60,6 +59,8 @@
             <div class="fsm-actions">
                 <button id="generateBtn">Generate FSM</button>
                 <button id="loadExampleBtn">Load Example</button>
+                <button id="fitBtn">Fit FSM</button>
+                <button id="rearrangeBtn">Rearrange FSM</button> <!-- New Rearrange Button -->
             </div>
         </div>
     </div>

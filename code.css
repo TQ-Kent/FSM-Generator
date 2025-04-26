@@ -38,12 +38,22 @@ body {
     border: 1px solid #444;
     background-color: #2e2e2e;
     position: relative;
+    display: block;
+    direction: ltr; /* Ensure left-to-right direction */
 }
 
 #errorMessages {
-    color: #ff5252;
-    font-weight: bold;
-    white-space: pre-wrap;
+    position: fixed;
+    top: 10px;
+    right: 10px;
+    background-color: #ff5252;
+    color: #ffffff;
+    padding: 10px 20px;
+    border-radius: 5px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+    z-index: 1000;
+    display: none; /* Initially hidden */
+    font-size: 14px;
 }
 
 #fsmDefinitionOutput {
@@ -75,6 +85,7 @@ body {
     margin-bottom: 20px;
     border-radius: 5px;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+    overflow: hidden; /* Prevent content overflow */
 }
 
 label {
@@ -85,12 +96,13 @@ label {
 }
 
 input[type="text"], select {
-    width: 100%;
+    width: 100%; /* Ensure inputs take up the full width of their container */
     padding: 10px;
     border: 1px solid #444;
     border-radius: 4px;
     background-color: #1e1e1e;
     color: #ffffff;
+    box-sizing: border-box; /* Prevent overflow */
 }
 
 select[multiple] {
@@ -128,20 +140,27 @@ button:hover {
     background-color: #0097a7;
 }
 
-#addRowBtn {
-    background-color: #0078d4;
+#fitBtn {
+    background-color: #4caf50; /* Green color for the Fit button */
 }
 
-#addRowBtn:hover {
-    background-color: #005fa3;
+#fitBtn:hover {
+    background-color: #388e3c; /* Darker green on hover */
 }
 
-.deleteRowBtn {
-    background-color: #d9534f;
-    padding: 5px 10px;
-    font-size: 0.9em;
+#startStateCheckboxes, #finalStateCheckboxes {
+    display: flex; /* Use flexbox for alignment */
+    flex-wrap: wrap; /* Allow wrapping if there are many checkboxes */
+    gap: 10px; /* Add spacing between checkboxes */
+    margin-top: 10px;
 }
 
-.deleteRowBtn:hover {
-    background-color: #c9302c;
+#startStateCheckboxes label, #finalStateCheckboxes label {
+    display: flex;
+    align-items: center;
+    cursor: pointer; /* Add pointer cursor for better UX */
+}
+
+#startStateCheckboxes input[type="radio"], #finalStateCheckboxes input[type="checkbox"] {
+    margin-right: 5px; /* Add spacing between the checkbox and label text */
 }
