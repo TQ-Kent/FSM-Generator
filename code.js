@@ -174,7 +174,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     if (!startState) {
       displayError("Error: Start state not selected.");
-      return; // Stop execution if no start state is selected
+      return;
     }
 
     const finalStates = Array.from(
@@ -182,7 +182,6 @@ document.addEventListener("DOMContentLoaded", () => {
     ).map((checkbox) => checkbox.value);
 
     const transitions = [];
-
     transitionTableBody.querySelectorAll("tr").forEach((row, index) => {
       const from = row.querySelector(".fromState").value;
       const input = row.querySelector(".inputSymbol").value;
@@ -236,52 +235,48 @@ document.addEventListener("DOMContentLoaded", () => {
     clearErrors();
 
     const elements = [];
+    const nodeIds = new Set(); // Track node IDs for validation
+
+    // Add nodes
     states.forEach((state) => {
       elements.push({
         data: {
           id: state,
           label: state,
-          isStartState: state === startState, // Mark the start state
+          isStartState: state === startState,
         },
-        position: state === startState ? { x: -150, y: 0 } : undefined, // Position the start node on the left
-        ...(state === startState && {
-          position: { x: 100, y: 300 },
-          locked: false,
-        }),
       });
+      nodeIds.add(state); // Add node ID to the set
     });
 
-    function calculateEdgeControlPoints(from, to, states) {
-      const fromIndex = states.indexOf(from);
-      const toIndex = states.indexOf(to);
-      const horizontalDiff = toIndex - fromIndex;
+    const edgeCounts = {};
 
-      if (horizontalDiff === 0) {
-        // Self-loop
-        return {
-          weights: [0.5, 0.5],
-          distances: [50, -50],
-        };
-      } else if (horizontalDiff > 0) {
-        // Forward edge
-        return {
-          weights: [0.25, 0.75],
-          distances: [50 * horizontalDiff, 50 * horizontalDiff],
-        };
-      } else {
-        // Backward edge
-        return {
-          weights: [0.75, 0.25],
-          distances: [
-            -50 * Math.abs(horizontalDiff),
-            -50 * Math.abs(horizontalDiff),
-          ],
-        };
-      }
-    }
-
+    // Add edges
     transitions.forEach((t) => {
-      const control = calculateEdgeControlPoints(t.from, t.to, currentStates);
+      const edgeKey = `${t.from}-${t.to}`;
+      edgeCounts[edgeKey] = (edgeCounts[edgeKey] || 0) + 1;
+
+      const overlapIndex = edgeCounts[edgeKey]; // Index of the overlapping edge
+      const totalOverlaps = transitions.filter(
+        (tr) => tr.from === t.from && tr.to === t.to
+      ).length;
+
+      // Calculate parabolic offset for overlapping edges
+      const controlPointOffset =
+        t.from === t.to // Self-referencing edge (loop)
+          ? 60 // Fixed offset for loops
+          : totalOverlaps > 1
+          ? (overlapIndex - (totalOverlaps + 1) / 2) * 100 // Parabolic curve for overlaps
+          : 0; // Straight edge if no overlap
+
+      // Validate that source and target nodes exist
+      if (!nodeIds.has(t.from) || !nodeIds.has(t.to)) {
+        displayError(
+          `Error: Transition from "${t.from}" to "${t.to}" references undefined nodes.`
+        );
+        isValid = false;
+        return;
+      }
 
       elements.push({
         data: {
@@ -289,34 +284,31 @@ document.addEventListener("DOMContentLoaded", () => {
           source: t.from,
           target: t.to,
           label: t.input,
-        },
-        style: {
-          "control-point-weights": control.weights,
-          "control-point-distances": control.distances,
+          controlPointOffset, // Pass the offset as data for styling
         },
       });
     });
 
-    // Add a dummy edge pointing to the start node
-    if (startState) {
-      elements.push({
-        data: {
-          id: `start-arrow-${startState}`,
-          source: "invisible-start",
-          target: startState,
-        },
-        classes: "start-arrow", // Add a class for styling the arrow
-      });
-
-      // Add an invisible node for the arrow's source
-      elements.push({
-        data: {
-          id: "invisible-start",
-        },
-        position: { x: -200, y: 0 }, // Position the invisible node to the left
-        classes: "invisible-node", // Add a class for styling the invisible node
-      });
+    if (!isValid) {
+      return; // Stop if there are validation errors
     }
+
+    // Validate the elements array
+    const invalidEdges = elements
+      .filter((el) => el.data && el.data.source && el.data.target)
+      .filter(
+        (edge) =>
+          !nodeIds.has(edge.data.source) || !nodeIds.has(edge.data.target)
+      );
+
+    if (invalidEdges.length > 0) {
+      console.error("Invalid edges detected:", invalidEdges);
+      displayError("Error: Some edges reference non-existent nodes.");
+      return;
+    }
+
+    // Debugging: Log the elements array
+    console.log("Generated elements:", elements);
 
     renderCytoscapeFSM(elements, startState);
   }
@@ -361,12 +353,28 @@ document.addEventListener("DOMContentLoaded", () => {
               "target-arrow-color": "#ccc",
               "target-arrow-shape": "triangle",
               label: "data(label)",
+              color: "white",
               "text-rotation": "autorotate",
               "font-size": "10px",
-              "text-margin-y": -10,
-              "text-margin-x": -10,
-              color: "#ffffff",
-              "curve-style": "bezier", // Allow curved edges for better readability
+              "text-margin-y": "10px",
+              "text-margin-x": "10px",
+              "curve-style": "bezier",
+              "control-point-weights": [0.5],
+              "control-point-distances": [50],
+            },
+          },
+          {
+            selector: "edge[source = target]", // Style for self-referencing edges (loops)
+            style: {
+              "curve-style": "bezier",
+              "control-point-weights": [0.5], // Adjust control points for loops
+              "control-point-distances": [50], // Create a loop shape
+              "line-color": "#ccc",
+              "target-arrow-color": "#ccc",
+              "target-arrow-shape": "triangle",
+              label: "data(label)",
+              "text-rotation": "autorotate",
+              "font-size": "10px",
             },
           },
           {
@@ -390,14 +398,14 @@ document.addEventListener("DOMContentLoaded", () => {
           },
         ],
         layout: {
-          name: "breadthfirst", // Use the breadthfirst layout
-          fit: true, // Fit the graph to the container
-          directed: true, // Treat the graph as directed
-          padding: 50, // Add padding around the graph
-          spacingFactor: 1, // Adjust spacing between nodes
-          avoidOverlap: true, // Avoid overlapping nodes
-          roots: startState ? `#${startState}` : undefined, // Use startState only if defined
-          horizontal: true, // Arrange nodes from left to right
+          name: "breadthfirst",
+          fit: true,
+          directed: true,
+          padding: 50,
+          spacingFactor: 1,
+          avoidOverlap: true,
+          roots: startState ? `#${startState}` : undefined,
+          horizontal: true,
         },
         wheelSensitivity: 0.2,
         userZoomingEnabled: true,
@@ -429,23 +437,27 @@ document.addEventListener("DOMContentLoaded", () => {
     );
     if (startStateCheckbox) startStateCheckbox.checked = true;
 
+    // Set final state
     const finalStateCheckbox = document.querySelector(
       'input[name="finalStates"][value="q2"]'
     );
     if (finalStateCheckbox) finalStateCheckbox.checked = true;
 
+    // Add one transition
     transitionTableBody.innerHTML = "";
     addTransitionRow();
     const firstRow = transitionTableBody.querySelector("tr");
-    firstRow.querySelector(".fromState").value = "q0";
-    firstRow.querySelector(".inputSymbol").value = "a";
-    firstRow.querySelector(".toState").value = "q1";
+    if (firstRow) {
+      const fromSelect = firstRow.querySelector(".fromState");
+      const inputSelect = firstRow.querySelector(".inputSymbol");
+      const toSelect = firstRow.querySelector(".toState");
 
-    addTransitionRow();
-    const secondRow = transitionTableBody.querySelector("tr:last-child");
-    secondRow.querySelector(".fromState").value = "q1";
-    secondRow.querySelector(".inputSymbol").value = "b";
-    secondRow.querySelector(".toState").value = "q2";
+      if (fromSelect && inputSelect && toSelect) {
+        fromSelect.value = "q0"; // From state
+        inputSelect.value = "a"; // Input symbol
+        toSelect.value = "q1"; // To state
+      }
+    }
   }
 
   loadExample();
@@ -465,15 +477,14 @@ document.addEventListener("DOMContentLoaded", () => {
   document.getElementById("rearrangeBtn").addEventListener("click", () => {
     if (cy) {
       cy.layout({
-        zoom: cy.zoom() * 0.9,
         name: "breadthfirst",
         fit: true,
         directed: true,
         padding: 50,
         spacingFactor: 1,
         avoidOverlap: true,
-        roots: "#invisible-start",
-        horizontal: true, // Correct option for left-to-right arrangement
+        roots: startState ? `#${startState}` : undefined,
+        horizontal: true,
       }).run();
     }
   });
